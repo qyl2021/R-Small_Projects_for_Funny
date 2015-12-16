@@ -1,0 +1,91 @@
+---
+title: "Demo-琅琊榜"
+author: "yunyan"
+date: "Thursday, November 19, 2015"
+output: html_document
+---
+
+##一、导入数据
+
+```{r}
+#readLines里面放的是txt地址
+text<-readLines("D:/琅琊榜/LangYaBang.txt")
+text<-text[nchar(text)!=0]
+#预览一下：
+text[sample(1:15000,6)]
+```
+
+##二、单条件筛选数据(grep)
+
+```{r}
+#用grepl出TRUE/FALSE，再与直接储存的text对照提取
+#方法2：用grep直接看对话效果
+conversation<-text[grepl("“|”",text)]
+conversation_temp<-grep("“|”",text,value=TRUE)
+#示例
+conversation[sample(1:length(conversation),7)]
+```
+
+##三、多条件选出人物对话
+
+```{r}
+feiliu_linchen<-text[grepl("飞流",text)&grepl("蔺晨|阁主|蔺大公子",text)]
+feiliu_linchen[sample(1:length(feiliu_linchen),7)]
+```
+
+##四、翻译处理数据
+
+###1、拆分段落章节(apply与循环)
+
+```{r}
+#grep，用.代替任何一个字符
+章节名<-(grep("第.卷",text,value=TRUE))
+章节分段<-c(grep("第.卷",text),length(text)+1)
+#创建一个文件夹，放分好段的章节
+dir.create("D:/琅琊榜/章节分段",recursive=TRUE)
+#接下来写一个循环，会把所有章节储存在一个list里，同时生成相对应的txt文件
+分段章节<-list()
+for (i in 1:(length(章节分段)-1)){
+        data<-text[章节分段[i]:章节分段[i+1]-1]
+        分段章节[[i]]<-data
+        names(分段章节)[i]<-章节名[i]
+        write(data,paste0("D:/琅琊榜/章节分段/",i,"-",章节名[i],".txt"))
+}
+head(list.files("D:/琅琊榜/章节分段/"))
+
+```
+
+###2、统计人物在哪些章节出场，并定位双方互动,制作数据表
+
+```
+#范例标准
+sapply(分段章节,function(e) sum(grepl(“梅长苏”,e)))
+```
+
+```{r}
+#首先，我们读入想要的人物数据。这里可以用前文提到的"|"来指代其他称呼。
+
+角色<-c("梅长苏|梅宗主|苏哲|苏先生|江左梅郎","靖王|景琰|水牛","林殊|小殊",
+"飞流","蔺晨|阁主","蒙挚|蒙大统领","霓凰|郡主","景睿",
+"豫津|浴巾","穆青|穆小王爷","梁王|皇帝|陛下","静妃|静嫔|静贵妃",
+"言侯|言阙","夏冬|冬姐","甄平","黎纲","誉王|景桓","赤焰","列战英|战英","大梁","谢玉|谢侯","滑族","夏江","公主")
+
+#其次，创建用来储存角色信息的文件夹
+dir.create("D:/琅琊榜/角色",recursive=TRUE)
+
+#然后写一个循环，用我们刚刚提到的函数，去写一段代码，把统计数据写入角色统计data.frame来。
+
+角色统计<-data.frame(卷名=names(分段章节))
+#循环开始
+for (a in 1:length(角色)){
+角色统计[,a+1]<-sapply(分段章节,function(e) sum(grepl(角色[a],e)))
+filename<-(strsplit(角色[a],"\\|"))[[1]][1]
+names(角色统计)[a+1]<-filename
+#计算好章节个数后，导出相应文件为HTML
+output<-text[grepl(角色[a],text)]
+output<-paste(output,collapse = "<br></br>")
+write(output,paste0("D:/琅琊榜/角色/",filename,".html"))
+}
+write.csv(角色统计,"D:/琅琊榜/角色统计.csv")
+角色统计[15:25,1:7]
+```

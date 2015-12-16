@@ -1,0 +1,56 @@
+---
+title: "Demo-Read Code via R"
+author: "yunyan"
+date: "Thursday, November 19, 2015"
+output: html_document
+---
+
+##一、读入R代码
+
+```{r}
+fileslist<-list.files("F:/Code/ML_for_Hackers-master/",recursive = TRUE,pattern="\\.R$",full.names = TRUE)
+code_detail<-NULL
+for (i in 1:length(fileslist)){
+        code_detail<-c(code_detail,readLines(fileslist[i]))
+}
+
+head(code_detail)
+```
+
+##二、按条件找数据
+
+###1、用了什么R包
+```{r}
+library_list<-strsplit(code_detail[grep("^library\\(",code_detail)],"\\(|\\)|\\,")
+library_list<-sapply(library_list,function(e) e[2])
+library_list<-gsub("\\p{P}","",library_list,perl=TRUE)
+a<-sort(table(library_list),decreasing = TRUE)
+a
+```
+
+###2、是否喜欢写备注,写怎样的注释,注释多不多
+
+```{r}
+zhushi<-code_detail[grep("#",code_detail)]
+#看看注释长什么样子
+zhushi[sample(1:length(zhushi),20)]
+#看看注释占总代码量的多少
+length(zhushi)/length(code_detail)
+```
+
+###3、看看写过什么函数
+```{r}
+function_list<-code_detail[grepl("function\\(",code_detail) & grepl("<-",code_detail) & !grepl("apply",code_detail)]
+function_list<-sapply(strsplit(function_list," "),function(e) e[1])
+sample(function_list,30)
+```
+
+###4、看看某些关键函数的应用方法
+```{r}
+list_1<-code_detail[grepl("apply\\(",code_detail)]
+sample(list_1,10)
+list_2<-code_detail[grepl("[ \\()]list\\(",code_detail)]
+sample(list_2,10)
+```
+
+####正则表达式、文本挖掘的潜在应用、统计分析数据
